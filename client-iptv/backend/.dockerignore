@@ -1,0 +1,10 @@
+node_modules
+dist
+data
+temp
+*.db
+*.db-*
+.env
+.git
+coverage
+*.log

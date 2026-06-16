@@ -1,0 +1,13 @@
+{
+  // Type-checks the test suite (src/**/*.test.ts + tests/**) without emitting,
+  // so `rootDir`/build constraints in the main tsconfig stay intact. Used by the
+  // `typecheck:test` script; the build still excludes tests (see tsconfig.json).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

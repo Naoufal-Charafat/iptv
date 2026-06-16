@@ -1,0 +1,12 @@
+[
+  {
+    "channel": "CNN.us",
+    "feed": null,
+    "in_use": true,
+    "tags": [],
+    "width": 100,
+    "height": 50,
+    "format": "PNG",
+    "url": "https://example.com/cnn.png"
+  }
+]

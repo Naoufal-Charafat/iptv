@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+build
+coverage
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Generated / vendored
+*.min.js
+*.min.css
+pnpm-lock.yaml
+package-lock.json
+
+# Assets
+mockups

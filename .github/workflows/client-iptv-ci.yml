@@ -1,0 +1,51 @@
+name: client-iptv-ci
+
+# CI gate for the personal IPTV web client. Scoped to client-iptv/** so it
+# never interferes with the parent iptv repo workflows (check / format / update).
+on:
+  push:
+    paths:
+      - 'client-iptv/**'
+      - '.github/workflows/client-iptv-ci.yml'
+  pull_request:
+    paths:
+      - 'client-iptv/**'
+      - '.github/workflows/client-iptv-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-iptv-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: client-iptv
+
+jobs:
+  build:
+    name: lint + typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: client-iptv/package-lock.json
+
+      - name: Install dependencies
+        # Use npm install (not ci) so the workflow works before a committed
+        # lockfile exists. The build must not require iptv.db or any network ETL.
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build (shared + backend + frontend)
+        run: npm run build

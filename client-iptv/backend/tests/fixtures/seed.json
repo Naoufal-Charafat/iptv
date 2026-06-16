@@ -1,0 +1,151 @@
+{
+  "_comment": "Small hand-built fixture for route/app tests (issue #25). Mirrors the SQL schema column names. Loaded by tests/helpers/seedDatabase.ts. No network, no full dataset.",
+  "categories": [
+    { "id": "news", "name": "News" },
+    { "id": "movies", "name": "Movies" },
+    { "id": "sports", "name": "Sports" }
+  ],
+  "countries": [
+    { "code": "US", "name": "United States", "flag": "🇺🇸", "languages": ["eng"] },
+    { "code": "ES", "name": "Spain", "flag": "🇪🇸", "languages": ["spa"] }
+  ],
+  "languages": [
+    { "code": "eng", "name": "English" },
+    { "code": "spa", "name": "Spanish" }
+  ],
+  "regions": [
+    { "code": "NA", "name": "North America", "countries": ["US"] }
+  ],
+  "region_countries": [
+    { "region_code": "NA", "country_code": "US" }
+  ],
+  "subdivisions": [
+    { "code": "US-CA", "name": "California", "country": "US", "parent": null }
+  ],
+  "channels": [
+    {
+      "id": "CNN.us",
+      "name": "CNN",
+      "alt_names": ["Cable News Network"],
+      "network": "Cable News Network",
+      "owners": [],
+      "country": "US",
+      "categories": ["news"],
+      "is_nsfw": 0,
+      "launched": "1980-06-01",
+      "closed": null,
+      "replaced_by": null,
+      "website": "https://cnn.com",
+      "is_closed": 0,
+      "is_blocked": 0,
+      "country_name": "United States"
+    },
+    {
+      "id": "TVE.es",
+      "name": "Televisión Española",
+      "alt_names": ["La 1"],
+      "network": "RTVE",
+      "owners": [],
+      "country": "ES",
+      "categories": ["news"],
+      "is_nsfw": 0,
+      "launched": null,
+      "closed": null,
+      "replaced_by": null,
+      "website": null,
+      "is_closed": 0,
+      "is_blocked": 0,
+      "country_name": "Spain"
+    },
+    {
+      "id": "NoStream.us",
+      "name": "No Stream Channel",
+      "alt_names": [],
+      "network": null,
+      "owners": [],
+      "country": "US",
+      "categories": ["movies"],
+      "is_nsfw": 0,
+      "launched": null,
+      "closed": null,
+      "replaced_by": null,
+      "website": null,
+      "is_closed": 0,
+      "is_blocked": 0,
+      "country_name": "United States"
+    },
+    {
+      "id": "Blocked.us",
+      "name": "Blocked Channel",
+      "alt_names": [],
+      "network": null,
+      "owners": [],
+      "country": "US",
+      "categories": ["news"],
+      "is_nsfw": 0,
+      "launched": null,
+      "closed": null,
+      "replaced_by": null,
+      "website": null,
+      "is_closed": 0,
+      "is_blocked": 1,
+      "country_name": "United States"
+    }
+  ],
+  "channel_categories": [
+    { "channel_id": "CNN.us", "category_id": "news" },
+    { "channel_id": "TVE.es", "category_id": "news" },
+    { "channel_id": "NoStream.us", "category_id": "movies" }
+  ],
+  "channel_languages": [
+    { "channel_id": "CNN.us", "language_code": "eng" },
+    { "channel_id": "TVE.es", "language_code": "spa" }
+  ],
+  "feeds": [
+    {
+      "channel": "CNN.us",
+      "id": "SD",
+      "stream_id": "CNN.us@SD",
+      "name": "SD",
+      "alt_names": [],
+      "is_main": 1,
+      "broadcast_area": ["c/US"],
+      "languages": ["eng"],
+      "timezones": [],
+      "format": "720p"
+    }
+  ],
+  "streams": [
+    { "channel": "CNN.us", "feed": null, "title": "CNN HD", "url": "https://example.com/cnn.m3u8", "quality": "1080p" },
+    { "channel": "CNN.us", "feed": null, "title": "CNN SD", "url": "https://example.com/cnn-sd.m3u8", "quality": "480p" },
+    { "channel": "TVE.es", "feed": null, "title": "TVE", "url": "https://example.com/tve.m3u8", "quality": "720p" }
+  ],
+  "logos": [
+    { "channel": "CNN.us", "feed": null, "in_use": 1, "tags": [], "width": 100, "height": 50, "format": "PNG", "url": "https://example.com/cnn.png" }
+  ],
+  "guides": [
+    { "channel": "CNN.us", "feed": null, "site": "tvguide.com", "site_id": "cnn", "site_name": "TV Guide", "lang": "en", "sources": [] }
+  ],
+  "fts": [
+    {
+      "channel_id": "CNN.us",
+      "name": "CNN",
+      "alt_names": "Cable News Network",
+      "country_name": "United States",
+      "categories": "news",
+      "network": "Cable News Network",
+      "owners": "",
+      "languages": "eng English"
+    },
+    {
+      "channel_id": "TVE.es",
+      "name": "Televisión Española",
+      "alt_names": "La 1",
+      "country_name": "Spain",
+      "categories": "news",
+      "network": "RTVE",
+      "owners": "",
+      "languages": "spa Spanish"
+    }
+  ]
+}
