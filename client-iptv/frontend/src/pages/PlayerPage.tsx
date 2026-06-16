@@ -26,6 +26,20 @@ const QUALITY_RANK: Record<string, number> = {
   '480i': 0
 }
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
+/**
+ * Route a stream through the backend proxy so it actually plays in the browser:
+ * the proxy injects the upstream User-Agent/Referer, sets permissive CORS and
+ * rewrites the .m3u8 so segments flow back through it too.
+ */
+function proxiedStreamUrl(stream: Stream): string {
+  const params = new URLSearchParams({ url: stream.url })
+  if (stream.user_agent) params.set('ua', stream.user_agent)
+  if (stream.referrer) params.set('referrer', stream.referrer)
+  return `${API_BASE}/proxy?${params.toString()}`
+}
+
 /** Pick the best stream: highest declared quality, first valid URL as fallback. */
 function pickBestStream(streams: Stream[] | undefined): Stream | undefined {
   if (!streams || streams.length === 0) return undefined
@@ -47,12 +61,9 @@ export function PlayerPage() {
   const streamsQuery = useChannelStreams(channelId)
 
   const stream = useMemo(() => pickBestStream(streamsQuery.data), [streamsQuery.data])
+  const src = useMemo(() => (stream ? proxiedStreamUrl(stream) : undefined), [stream])
 
-  const { state, controls } = useHlsPlayer(videoRef, stream?.url, {
-    autoPlay: true,
-    userAgent: stream?.user_agent ?? null,
-    referrer: stream?.referrer ?? null
-  })
+  const { state, controls } = useHlsPlayer(videoRef, src, { autoPlay: true })
 
   // A control panel being open keeps the overlays pinned.
   const [panelOpen, setPanelOpen] = useState(false)

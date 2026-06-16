@@ -88,7 +88,7 @@ function buildWhere(filters: ChannelFilters): WhereClause {
   }
   if (filters.country) {
     conditions.push('c.country = ?')
-    params.push(filters.country)
+    params.push(filters.country.toUpperCase())
   }
   if (filters.category) {
     conditions.push(
@@ -111,6 +111,9 @@ function buildWhere(filters: ChannelFilters): WhereClause {
   if (filters.q && filters.q.trim().length > 0) {
     conditions.push('c.name LIKE ?')
     params.push(`%${filters.q.trim()}%`)
+  }
+  if (filters.hasStreams) {
+    conditions.push('EXISTS (SELECT 1 FROM streams s WHERE s.channel = c.id)')
   }
 
   return { sql: `WHERE ${conditions.join(' AND ')}`, params }

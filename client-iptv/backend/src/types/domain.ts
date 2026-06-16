@@ -121,6 +121,8 @@ export interface ChannelFilters {
   includeClosed?: boolean
   /** Include NSFW channels (default: false). */
   includeNsfw?: boolean
+  /** Only channels with at least one playable stream (applied in SQL). */
+  hasStreams?: boolean
 }
 
 export type ChannelSortField = 'name' | 'country' | 'streamCount'
