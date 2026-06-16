@@ -105,18 +105,53 @@ export interface SearchHit {
 
 let searchStmt: Statement | null = null
 let searchStmtDb: Db | null = null
+let countStmt: Statement | null = null
+let countStmtDb: Db | null = null
+
+/**
+ * Restrict FTS hits to *playable* channels (non-blocked + at least one stream),
+ * the same guarantee as `/api/channels`. Applying this INSIDE the FTS query —
+ * before LIMIT/OFFSET — is what keeps pages full and the total accurate; doing
+ * it after pagination would yield short or empty pages.
+ */
+const PLAYABLE_FILTER = `
+  AND EXISTS (
+    SELECT 1 FROM channels c
+     WHERE c.id = channels_fts.channel_id
+       AND c.is_blocked = 0
+       AND EXISTS (SELECT 1 FROM streams s WHERE s.channel = c.id)
+  )`
 
 function getSearchStmt(db: Db): Statement {
   if (searchStmt && searchStmtDb === db) return searchStmt
   searchStmt = db.prepare(
     `SELECT channel_id, bm25(channels_fts) AS rank
        FROM channels_fts
-      WHERE channels_fts MATCH ?
+      WHERE channels_fts MATCH ?${PLAYABLE_FILTER}
       ORDER BY rank
       LIMIT ? OFFSET ?`
   )
   searchStmtDb = db
   return searchStmt
+}
+
+function getCountStmt(db: Db): Statement {
+  if (countStmt && countStmtDb === db) return countStmt
+  countStmt = db.prepare(
+    `SELECT COUNT(*) AS total
+       FROM channels_fts
+      WHERE channels_fts MATCH ?${PLAYABLE_FILTER}`
+  )
+  countStmtDb = db
+  return countStmt
+}
+
+/** Exact count of playable channels matching the query (for pagination total). */
+export function countChannelMatches(db: Db, query: string): number {
+  const match = toMatchQuery(query)
+  if (!match) return 0
+  const row = getCountStmt(db).get(match) as { total: number }
+  return row.total
 }
 
 /**
@@ -143,4 +178,6 @@ export function searchChannelIds(
 export function resetFtsCache(): void {
   searchStmt = null
   searchStmtDb = null
+  countStmt = null
+  countStmtDb = null
 }

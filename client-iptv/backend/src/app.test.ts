@@ -1,12 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import type { FastifyInstance } from 'fastify'
-import { buildApp } from './app.js'
-import { closeDb } from './db/client.js'
+
+// Point the SQLite path at a guaranteed-nonexistent file *before* the config
+// singleton and app modules load, so the `/api/health/db` "missing db" case is
+// exercised deterministically even when a real seeded ./data/iptv.db exists.
+process.env.NODE_ENV = 'test'
+process.env.DATABASE_PATH = join(tmpdir(), 'iptv-app-test-missing.db')
+
+let buildApp: (typeof import('./app.js'))['buildApp']
+let closeDb: (typeof import('./db/client.js'))['closeDb']
 
 describe('backend app (issues #11, #13)', () => {
   let app: FastifyInstance
 
   beforeAll(async () => {
+    // Import after env is set so config/db resolve the missing-db path.
+    ;({ buildApp } = await import('./app.js'))
+    ;({ closeDb } = await import('./db/client.js'))
     app = await buildApp()
     await app.ready()
   })

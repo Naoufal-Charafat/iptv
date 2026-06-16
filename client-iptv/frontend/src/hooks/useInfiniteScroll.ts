@@ -23,6 +23,15 @@ export function useInfiniteScroll<T extends HTMLElement = HTMLDivElement>({
   rootMargin = '600px'
 }: UseInfiniteScrollOptions) {
   const sentinelRef = useRef<T>(null)
+  // Re-entrancy guard: `isFetching` only flips on the next render, so without
+  // this the observer can fire several times for the same sentinel (multiple
+  // entries / StrictMode double-mount) and append the same cursor page twice.
+  const requested = useRef(false)
+
+  // Clear the guard once an in-flight fetch settles, so the next page can load.
+  useEffect(() => {
+    if (!isFetching) requested.current = false
+  }, [isFetching])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -31,7 +40,8 @@ export function useInfiniteScroll<T extends HTMLElement = HTMLDivElement>({
     const observer = new IntersectionObserver(
       entries => {
         const entry = entries[0]
-        if (entry?.isIntersecting && hasNextPage && !isFetching) {
+        if (entry?.isIntersecting && hasNextPage && !isFetching && !requested.current) {
+          requested.current = true
           fetchNextPage()
         }
       },

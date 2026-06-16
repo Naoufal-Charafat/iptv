@@ -2,7 +2,7 @@ import { MaterialIcon } from '@/components/icons/MaterialIcon'
 import { ErrorState } from '@/components/feedback/ErrorState'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useChannels } from '@/features/channels/hooks'
-import { cn } from '@/lib/utils'
+import { cn, dedupeById } from '@/lib/utils'
 
 export interface ChannelSwitcherProps {
   /** Currently playing channel id (highlighted). */
@@ -19,7 +19,7 @@ export function ChannelSwitcher({ currentChannelId, onSelect }: ChannelSwitcherP
   const { data, isLoading, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useChannels({ limit: 24 })
 
-  const channels = data?.pages.flatMap(p => p.data) ?? []
+  const channels = dedupeById(data?.pages.flatMap(p => p.data) ?? [])
 
   if (isLoading) {
     return (

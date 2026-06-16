@@ -135,6 +135,11 @@ function seed(db: Db): void {
     db.prepare(
       `INSERT INTO streams (channel, feed, title, url, quality) VALUES (?, ?, ?, ?, ?)`
     ).run('CNN.us', null, 'CNN HD', 'https://example.com/cnn.m3u8', '720p')
+    // TVE.es needs a stream so it is playable: /api/search now only returns
+    // channels with at least one stream (same hasStreams guarantee as /api/channels).
+    db.prepare(
+      `INSERT INTO streams (channel, feed, title, url, quality) VALUES (?, ?, ?, ?, ?)`
+    ).run('TVE.es', null, 'TVE', 'https://example.com/tve.m3u8', '720p')
     db.prepare(
       `INSERT INTO logos (channel, feed, in_use, tags, width, height, format, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run('CNN.us', null, 1, '[]', 100, 50, 'PNG', 'https://example.com/cnn.png')
@@ -312,6 +317,48 @@ describe('SearchRepository + FTS (issues #16/#17)', () => {
     const ids = repo().searchIds('news')
     // both channels mention news (category) -> both indexed
     expect(ids.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('excludes channels without any stream (playable-only, like /api/channels)', () => {
+    // Index a channel in the FTS table but give it no stream row.
+    db.prepare(
+      `INSERT INTO channels (id, name, alt_names, network, owners, country, categories, is_nsfw, launched, closed, replaced_by, website, is_closed, is_blocked, country_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('Ghost.us', 'Ghost News', '[]', null, '[]', 'US', '["news"]', 0, null, null, null, null, 0, 0, 'United States')
+    db.prepare(
+      `INSERT INTO channels_fts (name, alt_names, country_name, categories, network, owners, languages, channel_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('Ghost News', '', 'United States', 'news', '', '', '', 'Ghost.us')
+
+    try {
+      const ids = repo().search('ghost').items.map(c => c.id)
+      expect(ids).not.toContain('Ghost.us')
+    } finally {
+      db.prepare(`DELETE FROM channels_fts WHERE channel_id = ?`).run('Ghost.us')
+      db.prepare(`DELETE FROM channels WHERE id = ?`).run('Ghost.us')
+    }
+  })
+
+  it('does not return duplicate channel ids even if the FTS index emits a hit twice', () => {
+    // Duplicate the CNN entry in the FTS index; the resolved result must dedup.
+    db.prepare(
+      `INSERT INTO channels_fts (name, alt_names, country_name, categories, network, owners, languages, channel_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run('CNN', 'Cable News Network', 'United States', 'news', 'Cable News Network', '', 'eng English', 'CNN.us')
+
+    try {
+      const ids = repo().search('cnn').items.map(c => c.id)
+      const cnnHits = ids.filter(id => id === 'CNN.us')
+      expect(cnnHits).toHaveLength(1)
+    } finally {
+      // Remove only the duplicate row we just added (keep the original).
+      db.prepare(
+        `DELETE FROM channels_fts
+          WHERE rowid IN (
+            SELECT rowid FROM channels_fts WHERE channel_id = ? ORDER BY rowid DESC LIMIT 1
+          )`
+      ).run('CNN.us')
+    }
   })
 })
 
