@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { MaterialIcon } from '@/components/icons/MaterialIcon'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -13,6 +15,8 @@ export interface ErrorStateProps {
   onRetry?: () => void
   /** Custom retry button label. */
   retryLabel?: string
+  /** Optional extra CTA (e.g. a "Volver" link) rendered next to the retry button. */
+  action?: ReactNode
   className?: string
 }
 
@@ -26,6 +30,7 @@ export function ErrorState({
   description = 'No se pudo cargar el contenido. Inténtalo de nuevo.',
   onRetry,
   retryLabel = 'Reintentar',
+  action,
   className
 }: ErrorStateProps) {
   return (
@@ -43,10 +48,15 @@ export function ErrorState({
           <p className="mx-auto max-w-md text-body-md text-on-surface-variant">{description}</p>
         )}
       </div>
-      {onRetry && (
-        <Button variant="secondary" iconLeft="refresh" onClick={onRetry}>
-          {retryLabel}
-        </Button>
+      {(onRetry || action) && (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {onRetry && (
+            <Button variant="secondary" iconLeft="refresh" onClick={onRetry}>
+              {retryLabel}
+            </Button>
+          )}
+          {action}
+        </div>
       )}
     </div>
   )

@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { SearchBar } from '@/components/search/SearchBar'
 import { ChannelGrid } from '@/features/browser/ChannelGrid'
 import { useSearch } from '@/features/search/hooks'
+import { dedupeById } from '@/lib/utils'
 
 /**
  * Dedicated search results listing (`/buscar?q=`) reached from the Explore
@@ -18,7 +19,7 @@ export function SearchResultsPage() {
   const [query, setQuery] = useState(initialQ)
 
   const search = useSearch(query)
-  const results = search.data?.pages.flatMap(p => p.data) ?? []
+  const results = dedupeById(search.data?.pages.flatMap(p => p.data) ?? [])
   const total = search.data?.pages[0]?.total
   const trimmed = query.trim()
 

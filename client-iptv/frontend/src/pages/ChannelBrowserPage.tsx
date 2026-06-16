@@ -8,6 +8,7 @@ import { ChannelGrid } from '@/features/browser/ChannelGrid'
 import { FilterPanel } from '@/features/browser/FilterPanel'
 import { useChannels } from '@/features/channels/hooks'
 import { useDimensionItems } from '@/features/dimensions/hooks'
+import { dedupeById } from '@/lib/utils'
 import { DIMENSIONS, type ChannelListParams, type Dimension } from '@client-iptv/shared'
 
 function isDimension(value: string | undefined): value is Dimension {
@@ -77,7 +78,7 @@ export function ChannelBrowserPage() {
   )
 
   const channels = useChannels(params)
-  const items = channels.data?.pages.flatMap(p => p.data) ?? []
+  const items = dedupeById(channels.data?.pages.flatMap(p => p.data) ?? [])
   const total = channels.data?.pages[0]?.total
 
   const syncQueryParam = (value: string) => {

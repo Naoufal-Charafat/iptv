@@ -1,5 +1,5 @@
 import { getConnection, type Db } from '../connection.js'
-import { searchChannelIds } from '../fts.js'
+import { countChannelMatches, searchChannelIds } from '../fts.js'
 import { mapChannel, type ChannelRow } from '../mappers.js'
 import type { ChannelDTO, Paginated } from '../../types/domain.js'
 
@@ -8,7 +8,11 @@ import type { ChannelDTO, Paginated } from '../../types/domain.js'
  *
  * Wraps the FTS5 helper (`searchChannelIds`, issue #16) and resolves the
  * relevance-ordered ids into full channel DTOs, preserving the bm25 ranking.
- * Blocked channels are excluded from the resolved results.
+ * Blocked channels — and channels without at least one playable stream — are
+ * excluded from the resolved results (same `hasStreams` guarantee as
+ * `/api/channels`), so every search hit is actually playable. Hits are also
+ * de-duplicated by channel id in case the FTS index yields the same channel
+ * more than once.
  */
 
 const RESOLVE_SELECT = `
@@ -39,7 +43,9 @@ const RESOLVE_SELECT = `
        LIMIT 1
     ) AS best_quality
   FROM channels c
-  WHERE c.id = ? AND c.is_blocked = 0
+  WHERE c.id = ?
+    AND c.is_blocked = 0
+    AND EXISTS (SELECT 1 FROM streams s WHERE s.channel = c.id)
 `
 
 export class SearchRepository {
@@ -59,15 +65,22 @@ export class SearchRepository {
 
     const resolve = this.db.prepare(RESOLVE_SELECT)
     const items: ChannelDTO[] = []
+    const seen = new Set<string>()
     for (const hit of hits) {
+      // Skip duplicate ids the FTS index may emit for the same channel.
+      if (seen.has(hit.channel_id)) continue
+      seen.add(hit.channel_id)
+      // RESOLVE_SELECT drops blocked and stream-less channels, so an unresolved
+      // hit means the channel is not playable and is correctly omitted.
       const row = resolve.get(hit.channel_id) as ChannelRow | undefined
       if (row) items.push(mapChannel(row))
     }
 
     return {
       items,
-      // Approximate total: when a full page came back there may be more.
-      total: offset + items.length + (hits.length === safePageSize ? safePageSize : 0),
+      // Exact total of playable matches (the FTS query pre-filters to playable
+      // channels, so every hit resolves and pages are never short).
+      total: countChannelMatches(this.db, query),
       page: pageNum,
       pageSize: safePageSize
     }

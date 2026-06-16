@@ -40,14 +40,17 @@ function proxiedStreamUrl(stream: Stream): string {
   return `${API_BASE}/proxy?${params.toString()}`
 }
 
-/** Pick the best stream: highest declared quality, first valid URL as fallback. */
-function pickBestStream(streams: Stream[] | undefined): Stream | undefined {
-  if (!streams || streams.length === 0) return undefined
-  const valid = streams.filter(s => Boolean(s.url))
-  if (valid.length === 0) return undefined
-  return [...valid].sort(
-    (a, b) => (QUALITY_RANK[b.quality ?? ''] ?? -1) - (QUALITY_RANK[a.quality ?? ''] ?? -1)
-  )[0]
+/**
+ * Rank a channel's streams best-first (highest declared quality), dropping any
+ * without a URL. The player tries them in order, falling back to the next when
+ * one fails (dead / geo-blocked URLs), so a bad first stream doesn't strand the
+ * channel on an endless spinner.
+ */
+function rankStreams(streams: Stream[] | undefined): Stream[] {
+  if (!streams || streams.length === 0) return []
+  return streams
+    .filter(s => Boolean(s.url))
+    .sort((a, b) => (QUALITY_RANK[b.quality ?? ''] ?? -1) - (QUALITY_RANK[a.quality ?? ''] ?? -1))
 }
 
 export function PlayerPage() {
@@ -60,10 +63,28 @@ export function PlayerPage() {
   const channelQuery = useChannel(channelId)
   const streamsQuery = useChannelStreams(channelId)
 
-  const stream = useMemo(() => pickBestStream(streamsQuery.data), [streamsQuery.data])
+  const candidates = useMemo(() => rankStreams(streamsQuery.data), [streamsQuery.data])
+  // Index of the stream currently being attempted; advances on fatal failure.
+  const [attemptIndex, setAttemptIndex] = useState(0)
+  // Index whose failure we've already reacted to — guards the fallback effect
+  // from advancing twice for the same stream (e.g. on a background refetch).
+  const failedIndex = useRef(-1)
+  // Clamp so a stale index (after the channel changes) never points out of range.
+  const safeIndex = candidates.length ? Math.min(attemptIndex, candidates.length - 1) : 0
+  const stream = candidates[safeIndex]
   const src = useMemo(() => (stream ? proxiedStreamUrl(stream) : undefined), [stream])
 
   const { state, controls } = useHlsPlayer(videoRef, src, { autoPlay: true })
+
+  // Stream-level fallback: when the current stream fails fatally, try the next
+  // candidate before surfacing an error. Only the last stream's failure blocks.
+  const hasNextStream = safeIndex < candidates.length - 1
+  useEffect(() => {
+    if (state.status === 'error' && hasNextStream && failedIndex.current !== safeIndex) {
+      failedIndex.current = safeIndex
+      setAttemptIndex(i => i + 1)
+    }
+  }, [state.status, hasNextStream, safeIndex])
 
   // A control panel being open keeps the overlays pinned.
   const [panelOpen, setPanelOpen] = useState(false)
@@ -79,9 +100,11 @@ export function PlayerPage() {
     onActivity: overlay.show
   })
 
-  // Reset overlay visibility whenever the channel changes.
+  // Reset overlay + stream attempt whenever the channel changes.
   useEffect(() => {
     overlay.show()
+    setAttemptIndex(0)
+    failedIndex.current = -1
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelId])
 
@@ -104,6 +127,25 @@ export function PlayerPage() {
     navigate(`/reproductor/${encodeURIComponent(nextId)}`)
   }
 
+  // Go back to the previous view, falling back to home if there is no history.
+  const goBack = () => {
+    if (window.history.length > 1) navigate(-1)
+    else navigate('/')
+  }
+
+  // Retry the whole channel from its best stream (re-arms the fallback chain).
+  const handleRetry = () => {
+    failedIndex.current = -1
+    if (safeIndex !== 0) setAttemptIndex(0)
+    else controls.retry()
+  }
+
+  const backButton = (
+    <Button variant="secondary" iconLeft="arrow_back" onClick={goBack}>
+      Volver
+    </Button>
+  )
+
   // --- Hard error / empty states (block the player) ----------------------
   // Channel does not exist.
   if (channelQuery.isError && !channelQuery.isLoading) {
@@ -123,9 +165,20 @@ export function PlayerPage() {
     )
   }
 
-  const resolving = streamsQuery.isLoading || channelQuery.isLoading
-  const noStreams = !resolving && !stream
-  const fatal = state.status === 'error'
+  // Streams are still resolving while either query is in flight (and hasn't errored).
+  const resolving =
+    (streamsQuery.isLoading && !streamsQuery.isError) ||
+    (channelQuery.isLoading && !channelQuery.isError)
+  // The streams request itself failed (network / 404 from the real backend).
+  const streamsError = streamsQuery.isError
+  // Request succeeded but the channel has no playable stream (empty array).
+  const noStreams = !resolving && !streamsError && !stream
+  // Falling back to the next stream — keep showing the spinner, not an error.
+  const fallingBack = state.status === 'error' && hasNextStream
+  // hls.js / native playback gave up on the LAST available stream.
+  const fatal = state.status === 'error' && !hasNextStream
+  // Any state that replaces the player surface with a message + back button.
+  const blocked = streamsError || noStreams || fatal
 
   return (
     <div
@@ -136,21 +189,46 @@ export function PlayerPage() {
     >
       <VideoPlayer ref={videoRef} onSurfaceClick={overlay.show} />
 
-      {/* Loading / buffering spinner */}
-      {(resolving || state.status === 'loading' || state.status === 'buffering') && !fatal && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30">
-          <Spinner size={56} />
+      {/* Loading / buffering spinner — only while genuinely resolving, never
+          once we've settled into a blocked (no-streams / error) state. */}
+      {(resolving ||
+        fallingBack ||
+        state.status === 'idle' ||
+        state.status === 'loading' ||
+        state.status === 'buffering') &&
+        !blocked && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/30">
+            <Spinner size={56} />
+            {safeIndex > 0 && (
+              <p className="text-sm text-white/70">
+                Buscando una emisión disponible… (emisión {safeIndex + 1} de {candidates.length})
+              </p>
+            )}
+          </div>
+        )}
+
+      {/* The streams request itself failed (distinct from "no streams"). */}
+      {streamsError && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-8">
+          <ErrorState
+            icon="cloud_off"
+            title="No se pudieron cargar los streams"
+            description="Hubo un problema al obtener las emisiones de este canal."
+            onRetry={() => streamsQuery.refetch()}
+            action={backButton}
+          />
         </div>
       )}
 
-      {/* No streams for an existing channel */}
+      {/* Request succeeded but the channel has no playable stream. */}
       {noStreams && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-8">
           <ErrorState
             icon="signal_disconnected"
-            title="Sin streams disponibles"
+            title="No hay streams disponibles para este canal"
             description="Este canal no tiene ninguna emisión reproducible ahora mismo."
             onRetry={() => streamsQuery.refetch()}
+            action={backButton}
           />
         </div>
       )}
@@ -162,7 +240,8 @@ export function PlayerPage() {
             icon="error"
             title="No se pudo reproducir"
             description={state.error?.message ?? 'El stream no está disponible.'}
-            onRetry={controls.retry}
+            onRetry={handleRetry}
+            action={backButton}
           />
         </div>
       )}
@@ -174,7 +253,7 @@ export function PlayerPage() {
         onToggleFullscreen={fullscreen.toggle}
       />
 
-      {!fatal && !noStreams && (
+      {!blocked && (
         <>
           <ChannelInfoOverlay channel={summary} visible={overlay.visible} />
           <PlayerControlBar
@@ -190,7 +269,7 @@ export function PlayerPage() {
       )}
 
       {/* Center play affordance when autoplay was blocked. */}
-      {state.paused && !resolving && !fatal && !noStreams && (
+      {state.paused && !resolving && !blocked && (
         <button
           type="button"
           onClick={controls.play}
