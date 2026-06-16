@@ -1,0 +1,24 @@
+[
+  {
+    "channel": "CNN.us",
+    "id": "SD",
+    "name": "SD",
+    "alt_names": [],
+    "is_main": true,
+    "broadcast_area": ["c/US"],
+    "timezones": ["America/New_York"],
+    "languages": ["eng"],
+    "format": "720p"
+  },
+  {
+    "channel": "TVE.es",
+    "id": "SD",
+    "name": "SD",
+    "alt_names": [],
+    "is_main": true,
+    "broadcast_area": ["c/ES"],
+    "timezones": ["Europe/Madrid"],
+    "languages": ["spa"],
+    "format": "720p"
+  }
+]

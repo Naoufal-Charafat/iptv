@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: client-iptv-backend
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3001'
+      CORS_ORIGIN: http://localhost:5173
+      DATABASE_PATH: /app/data/iptv.db
+      DATA_DIR: /app/data/raw
+      LOG_LEVEL: info
+    volumes:
+      # Persist the SQLite database and raw data across container restarts.
+      - iptv-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  iptv-data:

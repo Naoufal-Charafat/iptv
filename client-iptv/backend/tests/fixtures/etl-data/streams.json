@@ -1,0 +1,32 @@
+[
+  {
+    "channel": "CNN.us",
+    "feed": "SD",
+    "title": "CNN HD",
+    "url": "https://example.com/cnn.m3u8",
+    "quality": "1080p",
+    "label": null,
+    "user_agent": null,
+    "referrer": null
+  },
+  {
+    "channel": "CNN.us",
+    "feed": "SD",
+    "title": "CNN SD",
+    "url": "https://example.com/cnn-sd.m3u8",
+    "quality": "480p",
+    "label": null,
+    "user_agent": null,
+    "referrer": null
+  },
+  {
+    "channel": "TVE.es",
+    "feed": "SD",
+    "title": "TVE",
+    "url": "https://example.com/tve.m3u8",
+    "quality": "720p",
+    "label": null,
+    "user_agent": null,
+    "referrer": null
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "CNN.us",
+    "name": "CNN",
+    "alt_names": ["Cable News Network"],
+    "network": "Cable News Network",
+    "owners": [],
+    "country": "US",
+    "categories": ["news"],
+    "is_nsfw": false,
+    "launched": "1980-06-01",
+    "closed": null,
+    "replaced_by": null,
+    "website": "https://cnn.com"
+  },
+  {
+    "id": "TVE.es",
+    "name": "Televisión Española",
+    "alt_names": ["La 1"],
+    "network": "RTVE",
+    "owners": [],
+    "country": "ES",
+    "categories": ["news"],
+    "is_nsfw": false,
+    "launched": null,
+    "closed": null,
+    "replaced_by": null,
+    "website": null
+  },
+  {
+    "id": "Blocked.us",
+    "name": "Blocked Channel",
+    "alt_names": [],
+    "network": null,
+    "owners": [],
+    "country": "US",
+    "categories": ["movies"],
+    "is_nsfw": true,
+    "launched": null,
+    "closed": null,
+    "replaced_by": null,
+    "website": null
+  }
+]

@@ -1,0 +1,4 @@
+[
+  { "name": "United States", "code": "US", "languages": ["eng"], "flag": "🇺🇸" },
+  { "name": "Spain", "code": "ES", "languages": ["spa"], "flag": "🇪🇸" }
+]
