@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { healthRoutes } from './health.js'
+import { homeRoutes } from './home.js'
 import { channelsRoutes } from './channels.js'
 import { dimensionsRoutes } from './dimensions.js'
 import { searchRoutes } from './search.js'
@@ -20,6 +21,7 @@ import { streamStatusRoutes } from './stream-status.js'
  */
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(healthRoutes)
+  await app.register(homeRoutes)
   await app.register(channelsRoutes)
   await app.register(dimensionsRoutes)
   await app.register(searchRoutes)

@@ -26,9 +26,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     requestIdLogLabel: 'reqId'
   })
 
-  // CORS: allow the Vite frontend origin (configurable).
+  // CORS: in local dev reflect any origin so the Vite dev server (whatever
+  // localhost port) can reach the API; production tightens this to CORS_ORIGIN.
   await app.register(cors, {
-    origin: config.CORS_ORIGIN,
+    origin: config.isProd ? config.CORS_ORIGIN : true,
     credentials: true
   })
 

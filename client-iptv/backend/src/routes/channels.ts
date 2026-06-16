@@ -55,7 +55,8 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
       language: query.language,
       region: query.region,
       q: query.q,
-      includeNsfw: query.is_nsfw
+      includeNsfw: query.is_nsfw,
+      hasStreams: query.has_streams
     }
 
     const sort: ChannelSort = {
@@ -67,13 +68,7 @@ export async function channelsRoutes(app: FastifyInstance): Promise<void> {
     const page = Math.floor(offset / limit) + 1
     const result = repo().listChannels(filters, sort, { page, pageSize: limit })
 
-    let items = result.items
-    // `has_streams` defaults true: hide channels with no playable streams.
-    if (query.has_streams) {
-      items = items.filter(c => c.streamCount > 0)
-    }
-
-    const summaries = items.map(toChannelSummary)
+    const summaries = result.items.map(toChannelSummary)
     return toCursorPage(summaries, offset, limit, result.total)
   })
 
