@@ -25,7 +25,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "etl": "npm run etl --workspace @client-iptv/backend",
-    "seed": "npm run seed --workspace @client-iptv/backend"
+    "seed": "npm run seed --workspace @client-iptv/backend",
+    "deploy": "node script/deploy.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
