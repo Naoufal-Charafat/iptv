@@ -16,9 +16,9 @@ jobs:
       - name: Get list of changed files
         id: files
         run: |
-          git fetch origin master:master
+          git fetch origin main:main
           ANY_CHANGED=false
-          ALL_CHANGED_FILES=$(git diff --diff-filter=ACMRT --name-only master -- streams/ | tr '\n' ' ')
+          ALL_CHANGED_FILES=$(git diff --diff-filter=ACMRT --name-only main -- streams/ | tr '\n' ' ')
           if [ -n "${ALL_CHANGED_FILES}" ]; then
             ANY_CHANGED=true
           fi

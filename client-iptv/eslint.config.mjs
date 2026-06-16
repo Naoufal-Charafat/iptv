@@ -48,7 +48,7 @@ export default tseslint.config(
       ],
       '@typescript-eslint/consistent-type-imports': [
         'error',
-        { prefer: 'type-imports', fixStyle: 'inline-type-imports' }
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports', disallowTypeAnnotations: false }
       ]
     }
   },
@@ -71,7 +71,7 @@ export default tseslint.config(
 
   {
     // Backend + shared + tooling: Node globals.
-    files: ['backend/**/*.ts', 'shared/**/*.ts', '*.{js,mjs,cjs}'],
+    files: ['backend/**/*.ts', 'shared/**/*.ts', '**/*.{js,mjs,cjs}'],
     languageOptions: {
       globals: { ...globals.node }
     }
